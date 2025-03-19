@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="login-container">
+    <div class="card auth-card">
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <i class="fas fa-comment auth-icon"></i>
+                <h2 class="auth-title">Yorum Ekle</h2>
+                <p class="auth-subtitle">Düşüncelerinizi paylaşın</p>
+            </div>
+            <form method="POST" class="auth-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Gönder
+                    </button>
+                    <a href="{% url 'post-detail' pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> İptal
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

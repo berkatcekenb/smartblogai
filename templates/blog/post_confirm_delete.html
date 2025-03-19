@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="login-container">
+    <div class="card auth-card">
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <i class="fas fa-exclamation-triangle auth-icon" style="color: #dc3545;"></i>
+                <h2 class="auth-title">Yazıyı Sil</h2>
+                <p class="auth-subtitle">"{{ object.title }}" başlıklı yazıyı silmek istediğinizden emin misiniz?</p>
+            </div>
+            <form method="POST" class="auth-form">
+                {% csrf_token %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Evet, Sil
+                    </button>
+                    <a href="{% url 'post-detail' object.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> İptal
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

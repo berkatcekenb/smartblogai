@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="create-post-container">
+    <div class="card post-form-card">
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <i class="fas fa-feather-alt auth-icon"></i>
+                <h2 class="auth-title">{{ object.title|default:"Yeni Blog Yazısı" }}</h2>
+                <p class="auth-subtitle">AI destekli içerik üretimine başlayın</p>
+            </div>
+            
+            <form method="POST" class="post-create-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Kaydet
+                    </button>
+                    <a href="{% url 'blog-home' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> İptal
+                    </a>
+                </div>
+
+                <div class="ai-helper-text text-center mt-4">
+                    <small class="text-muted">
+                        <i class="fas fa-robot"></i> 
+                        İçeriğinizi kaydettikten sonra AI, otomatik olarak özet çıkaracak ve 
+                        ilgili etiketleri belirleyecektir.
+                    </small>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

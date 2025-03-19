@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="login-container">
+    <div class="card auth-card">
+        <div class="card-body text-center">
+            <i class="fas fa-check-circle auth-icon"></i>
+            <h2 class="auth-title">Oturum Kapatıldı</h2>
+            <p class="auth-subtitle">Başarıyla çıkış yaptınız</p>
+            <a href="{% url 'login' %}" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> Tekrar Giriş Yap
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}

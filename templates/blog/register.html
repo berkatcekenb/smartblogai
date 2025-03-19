@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="login-container">
+    <div class="card auth-card">
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-plus auth-icon"></i>
+                <h2 class="auth-title">SmartBlog'a Katılın</h2>
+                <p class="auth-subtitle">Yapay zeka destekli blogunuzu oluşturun</p>
+            </div>
+            <form method="POST" class="register-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary btn-block w-100">
+                    <i class="fas fa-user-plus"></i> Hesap Oluştur
+                </button>
+                <div class="auth-links mt-4">
+                    <p class="text-center">
+                        Zaten hesabınız var mı? 
+                        <a href="{% url 'login' %}" class="login-link">
+                            <i class="fas fa-sign-in-alt"></i> Giriş Yapın
+                        </a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

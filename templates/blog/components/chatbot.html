@@ -1,0 +1,39 @@
+<div class="chatbot-container" id="chatbot">
+    <div class="chatbot-toggle" id="chatbot-toggle">
+        <i class="fas fa-robot"></i>
+    </div>
+    
+    <div class="chatbot-window" id="chatbot-window">
+        <div class="chatbot-header">
+            <h5><i class="fas fa-robot"></i> SmartBlog AI Asistan</h5>
+            <div class="header-actions">
+                <button class="clear-btn" id="chatbot-clear" title="Konuşmayı Temizle">
+                    <i class="fas fa-broom"></i>
+                </button>
+                <button class="close-btn" id="chatbot-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                <span class="message-icon"><i class="fas fa-robot"></i></span>
+                <span class="message-text">Merhaba! Ben SmartBlog AI asistanı. Size nasıl yardımcı olabilirim?</span>
+            </div>
+        </div>
+        
+        <form class="chat-input-form" id="chat-form">
+            <div class="input-group">
+                <input type="text" id="chat-input" class="form-control" 
+                       placeholder="Mesajınızı yazın..." required
+                       autocomplete="off"
+                       maxlength="200">
+                <div class="char-counter" id="char-counter">200</div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

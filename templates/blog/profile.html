@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="profile-container">
+    <div class="card profile-card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 text-center profile-sidebar">
+                    <div class="avatar-container mb-4">
+                        {% if user.userprofile.avatar %}
+                            <img src="{{ user.userprofile.avatar.url }}" class="profile-avatar" alt="Profile Picture">
+                        {% else %}
+                            <div class="default-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h3 class="profile-name">{{ user.username }}</h3>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-pencil-alt"></i>
+                            <span>{{ user.post_set.count }} Yazı</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-comment"></i>
+                            <span>{{ user.comment_set.count }} Yorum</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="profile-content">
+                        <h2 class="section-title">
+                            <i class="fas fa-user-edit"></i> Profil Düzenle
+                        </h2>
+                        
+                        <form method="POST" enctype="multipart/form-data" class="profile-form">
+                            {% csrf_token %}
+                            <div class="form-group mb-4">
+                                <label for="bio">Hakkımda</label>
+                                <textarea name="bio" class="form-control" rows="4" 
+                                    placeholder="Kendinizi tanıtın...">{{ user.userprofile.bio }}</textarea>
+                            </div>
+                            
+                            <div class="form-group mb-4">
+                                <label for="avatar">Profil Fotoğrafı</label>
+                                <div class="custom-file-upload">
+                                    <input type="file" name="avatar" id="avatar" class="form-control">
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> 
+                                        PNG, JPG veya GIF. Max 2MB.
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Değişiklikleri Kaydet
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
