@@ -101,7 +101,6 @@ smartblog/
 ### Chatbot
 - Real-time AI asistan
 - İlgili blog yazılarını önerme
-- Mesaj geçmişi
 - Karakter sayacı
 
 ### Blog Yazıları
