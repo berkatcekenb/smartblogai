@@ -129,18 +129,3 @@ smartblog/
 - Güvenli parola yönetimi
 - API rate limiting
 
-## 🤝 Katkıda Bulunma
-
-1. Fork'layın
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit'leyin (`git commit -m 'feat: Add amazing feature'`)
-4. Branch'i push'layın (`git push origin feature/amazing-feature`)
-5. Pull Request açın
-
-## 📄 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
-
-## 🙏 Katkıda Bulunanlar
-
-- [Adınız](https://github.com/yourusername)
