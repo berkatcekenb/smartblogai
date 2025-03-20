@@ -13,6 +13,13 @@ class UserRegistrationForm(UserCreationForm):
         fields = ['username', 'email', 'password1', 'password2', 'security_question', 'security_answer']
 
 class UserLoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.error_messages = {
+            'invalid_login': '❌ Kullanıcı adı veya şifre hatalı!',
+            'inactive': '⚠️ Bu hesap aktif değil.',
+        }
+    
     class Meta:
         model = User
         fields = ['username', 'password']

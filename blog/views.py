@@ -9,12 +9,13 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User  # User modelini ekledik
 from .models import Post, Comment
 from .utils import generate_summary_and_tags, generate_chatbot_response, client  # client ekledik
-from .forms import UserRegistrationForm, CommentForm, PasswordResetForm
+from .forms import UserRegistrationForm, CommentForm, PasswordResetForm, UserLoginForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import json
+from django.contrib.auth import login
 
 class PostListView(ListView):
     model = Post
@@ -38,6 +39,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         form.instance.summary = summary
         form.instance.tags = tags
         self.object = form.save()
+        messages.success(self.request, '✨ Blog yazınız başarıyla oluşturuldu!')
         return redirect('blog-home')
 
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -52,6 +54,7 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         form.instance.summary = summary
         form.instance.tags = tags
         self.object = form.save()
+        messages.info(self.request, '✏️ Blog yazınız güncellendi!')
         return redirect('post-detail', pk=self.object.pk)
 
     def test_func(self):
@@ -67,6 +70,10 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         post = self.get_object()
         return self.request.user == post.author
 
+    def delete(self, request, *args, **kwargs):
+        messages.warning(request, '🗑️ Blog yazısı silindi!')
+        return super().delete(request, *args, **kwargs)
+
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -76,7 +83,7 @@ def register(request):
             user.userprofile.security_question = form.cleaned_data.get('security_question')
             user.userprofile.security_answer = form.cleaned_data.get('security_answer')
             user.userprofile.save()
-            messages.success(request, 'Account created successfully!')
+            messages.success(request, '🎉 Hesabınız başarıyla oluşturuldu! Şimdi giriş yapabilirsiniz.')
             return redirect('login')
     else:
         form = UserRegistrationForm()
@@ -105,7 +112,7 @@ def profile(request):
         if 'avatar' in request.FILES:
             user_profile.avatar = request.FILES['avatar']
         user_profile.save()
-        messages.success(request, 'Profile updated successfully!')
+        messages.success(request, '👤 Profil bilgileriniz güncellendi!')
         return redirect('profile')
     return render(request, 'blog/profile.html')
 
@@ -118,15 +125,30 @@ def reset_password(request):
                 if user.userprofile.security_answer == form.cleaned_data['security_answer']:
                     user.password = make_password(form.cleaned_data['new_password'])
                     user.save()
-                    messages.success(request, 'Password has been reset successfully!')
+                    messages.success(request, '🔐 Şifreniz başarıyla sıfırlandı!')
                     return redirect('login')
                 else:
                     messages.error(request, 'Invalid security answer')
             except User.DoesNotExist:
-                messages.error(request, 'User not found')
+                messages.error(request, '❌ Kullanıcı bulunamadı!')
     else:
         form = PasswordResetForm()
     return render(request, 'blog/reset_password.html', {'form': form})
+
+def login_view(request):
+    if request.method == 'POST':
+        form = UserLoginForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, f'🎉 Hoş geldiniz, {user.username}!')
+            return redirect('blog-home')
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
+    else:
+        form = UserLoginForm()
+    return render(request, 'blog/login.html', {'form': form})
 
 @csrf_exempt
 @require_POST

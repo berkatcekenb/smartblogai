@@ -30,3 +30,6 @@ django-cors-headers>=4.3.0
 # Production
 gunicorn>=21.2.0
 whitenoise>=6.6.0
+
+# API Documentation
+drf-yasg==1.21.7
