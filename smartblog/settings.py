@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
+
 
 # Load environment variables
 load_dotenv()
@@ -18,6 +20,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',  # Eklendi
     'blog.apps.BlogConfig',
     'rest_framework',
     'crispy_forms',
@@ -30,7 +33,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',  # Bu middleware'in olduğundan emin olun
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -60,10 +63,21 @@ TEMPLATES = [
 ]
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Buraya toplanacak
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')  # Buradan toplanacak
+    os.path.join(BASE_DIR, 'static')
 ]
+
+
+AUTH_USER_MODEL = 'blog.CustomUser'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = '587'
+EMAIL_HOST_USER = 'berkatcekenb@gmail.com'
+EMAIL_HOST_PASSWORD = '839661.Ba'
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -71,7 +85,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
-# REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -90,17 +103,14 @@ REST_FRAMEWORK = {
     },
 }
 
-# Auth settings
 LOGIN_REDIRECT_URL = 'blog-home'
 LOGOUT_REDIRECT_URL = 'blog-home'
 LOGIN_URL = 'login'
 
-# OpenRouter API settings
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 OPENROUTER_SITE_URL = 'http://localhost:8000'
 OPENROUTER_SITE_NAME = 'SmartBlog AI'
 
-# Database settings
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -112,7 +122,6 @@ DATABASES = {
     }
 }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -128,13 +137,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = 'en-us'  # İsteğe bağlı: 'tr-tr' yapabilirsiniz
+TIME_ZONE = 'UTC'  # İsteğe bağlı: 'Europe/Istanbul' yapabilirsiniz
 USE_I18N = True
 USE_TZ = True
 
-# CSRF ayarları
-CSRF_COOKIE_SECURE = False  # Development için False, production için True olmalı
-CSRF_COOKIE_HTTPONLY = False  # Ajax istekleri için False
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']

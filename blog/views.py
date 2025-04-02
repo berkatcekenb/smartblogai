@@ -1,3 +1,4 @@
+from django.core.mail import send_mail
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
@@ -7,7 +8,7 @@ from django.views.generic import (
 )
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User  # User modelini ekledik
-from .models import Post, Comment
+from .models import Post, Comment, VerificationCode
 from .utils import generate_summary_and_tags, generate_chatbot_response, client  # client ekledik
 from .forms import UserRegistrationForm, CommentForm, PasswordResetForm, UserLoginForm
 from django.http import JsonResponse
@@ -15,7 +16,10 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import json
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model, authenticate
+from django.utils import timezone
+
+
 
 class PostListView(ListView):
     model = Post
@@ -78,16 +82,104 @@ def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            # Save security question and answer to UserProfile
-            user.userprofile.security_question = form.cleaned_data.get('security_question')
-            user.userprofile.security_answer = form.cleaned_data.get('security_answer')
-            user.userprofile.save()
-            messages.success(request, '🎉 Hesabınız başarıyla oluşturuldu! Şimdi giriş yapabilirsiniz.')
-            return redirect('login')
-    else:
-        form = UserRegistrationForm()
-    return render(request, 'blog/register.html', {'form': form})
+            # Kullanıcıyı kaydet (ancak henüz aktif etme, sinyal halledecek)
+            user = form.save(commit=False)
+            # Şifre hashlenir vs. form.save() bunu yapar.
+            # Sinyalimiz User modeli kaydedildiğinde zaten çalışacak
+            # ve is_active=False yapıp doğrulama kodu gönderecek.
+            # Bu yüzden burada tekrar is_active=False yapmaya gerek yok.
+            user.save()
+
+            # Başarı mesajı güncellendi - doğrulama gerekli
+            messages.success(request, '🎉 Hesabınız oluşturuldu! Lütfen e-postanızı kontrol ederek hesabınızı doğrulayın.')
+
+            # Doğrulama sayfasına yönlendir. Kullanıcı adını formdan almak daha güvenli.
+            # username = form.cleaned_data.get('username') # forms.py'deki UserCreationForm'da username alanı varsa
+            # Eğer CustomUser modelinde USERNAME_FIELD = 'email' ise email'i kullanmak gerekebilir.
+            # Şimdilik POST verisinden alalım ama formdan almak daha iyi.
+            username_from_post = request.POST.get('username') # forms.py'deki forma göre 'username' veya 'email' olabilir
+            return redirect('verify-email', username=username_from_post)
+        else:
+            # Form geçerli değilse, hatalarla birlikte formu tekrar göster
+            # Context'te anahtar olarak 'forms' yerine 'form' kullanmak daha yaygın
+            context = {'form': form}
+            return render(request, 'blog/register.html', context)
+    else:  # GET isteği ise (sayfa ilk açıldığında)
+        form = UserRegistrationForm()  # Boş bir form oluştur
+        context = {'form': form}       # Boş formu contexte ekle
+        # Kayıt sayfasını boş formla birlikte render et ve döndür
+        return render(request, 'blog/register.html', context)
+
+def verify_email(request, username):
+    user = get_user_model().objects.get(username=username)
+    code = VerificationCode.objects.filter(user=user).last()
+
+    if request.method == "POST":
+        # valid token
+        if code.code == request.POST['code']:
+
+            # checking for expired token
+            if code.expires_at > timezone.now():
+                user.is_active=True
+                user.save()
+                messages.success(request, "Hesabınız başarıyla doğrulandı. Giriş yapabilirsiniz.")
+                return redirect("blog/home")
+
+            # expired token
+            else:
+                messages.warning(request, "Doğrulama kodunun süresi dolmuş. Yeni bir doğrulama kodu isteyin.")
+                return redirect("verify-email", username=user.username)
+
+        # invalid verification code
+        else:
+            messages.warning(request, "Doğrulama kodu geçerisiz, Doğru kodu girin!")
+            return redirect("verify-email", username=user.username)
+    context = {}
+    return render(request, "verify_token.html", context)
+
+def resend_verification_code(request):
+    if request.method == 'POST':
+        user_email = request.POST["code_email"]
+
+        if get_user_model().objects.filter(email=user_email).exists():
+            user = get_user_model().objects.get(email=user_email)
+            code = VerificationCode.objects.create(user=user, expires_at=timezone.now() + timezone.timedelta(minutes=5))
+
+            # email variables
+            subject = "E-posta Doğrulama"
+            message = f"""
+                    Sayın {user.username},  
+
+                    E-posta doğrulamanız için gerekli kod: {code.code}  
+                    Bu kodun geçerlilik süresi 5 dakikadır.  
+                    Aşağıdaki bağlantıyı kullanarak doğrulama işlemini tamamlayabilirsiniz:  
+
+                    http://127.0.0.1:8000/verify-email/{user.username}  
+
+                    İyi günler dileriz.  
+                    """
+
+            sender = "berkatcekenn@gmail.com"
+            receiver = [user.email, ]
+
+            # send email
+            send_mail(
+                subject,
+                message,
+                sender,
+                receiver,
+                fail_silently=False,
+            )
+
+            messages.success(request, "Yeni doğrulama kodu e-posta adresinize gönderilmiştir.")
+            return redirect("verify-email", username=user.username)
+
+        else:
+            messages.warning(request, "Sisteme kayıtlı böyle bir e-posta bulunamadı.")
+            return redirect("resend-token")
+
+
+
 
 @login_required
 def add_comment(request, pk):
@@ -116,36 +208,20 @@ def profile(request):
         return redirect('profile')
     return render(request, 'blog/profile.html')
 
-def reset_password(request):
-    if request.method == 'POST':
-        form = PasswordResetForm(request.POST)
-        if form.is_valid():
-            try:
-                user = User.objects.get(username=form.cleaned_data['username'])
-                if user.userprofile.security_answer == form.cleaned_data['security_answer']:
-                    user.password = make_password(form.cleaned_data['new_password'])
-                    user.save()
-                    messages.success(request, '🔐 Şifreniz başarıyla sıfırlandı!')
-                    return redirect('login')
-                else:
-                    messages.error(request, 'Invalid security answer')
-            except User.DoesNotExist:
-                messages.error(request, '❌ Kullanıcı bulunamadı!')
-    else:
-        form = PasswordResetForm()
-    return render(request, 'blog/reset_password.html', {'form': form})
-
 def login_view(request):
     if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)
         if form.is_valid():
-            user = form.get_user()
+            username = request.POST['username']
+            password = request.POST['password']
+            user = authenticate(request, username=username, password=password)
             login(request, user)
-            messages.success(request, f'🎉 Hoş geldiniz, {user.username}!')
+            messages.success(request, f'🎉 Hoş geldiniz, {request.user.username}!')
             return redirect('blog-home')
         else:
             for error in form.errors.values():
                 messages.error(request, error[0])
+                return redirect('login')
     else:
         form = UserLoginForm()
     return render(request, 'blog/login.html', {'form': form})

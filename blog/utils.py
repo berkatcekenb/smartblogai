@@ -2,7 +2,7 @@ from django.conf import settings
 from openai import OpenAI
 import re
 from .models import Post
-from django.db.models import Q
+from django.contrib.postgres.search import SearchQuery, SearchRank
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
@@ -63,60 +63,26 @@ def generate_summary_and_tags(content, model_name="openai/gpt-4o-mini"):
         print(f"AI Error: {str(e)}")
         return "Özet kullanılamıyor.", "#hata"
 
+
+
 def search_related_posts(query, limit=3):
-    """Verilen sorguyla ilgili blog postlarını ara"""
-    # Gereksiz kelimeleri temizle
-    stop_words = ['mı', 'mi', 'var', 've', 'veya', 'bir', 'bu', 'şu', 'nasıl', 'hakkında']
-    words = [word.lower() for word in query.split() if word.lower() not in stop_words]
-    
-    # Eğer hiç kelime kalmazsa orijinal sorguyu kullan
-    if not words:
-        words = [query.lower()]
-    
-    print(f"Filtrelenmiş arama kelimeleri: {words}")  # Debug için
-    
-    # OR sorgusu oluştur
-    q_objects = Q()
-    
-    for word in words:
-        q_objects |= (
-            Q(title__icontains=word) |
-            Q(content__icontains=word) |
-            Q(tags__icontains=word) |
-            Q(summary__icontains=word)
-        )
-    
+    """Verilen sorguyla ilgili blog postlarını full-text search ile ara"""
+    # Sorguyu PostgreSQL full-text search formatına çevir
+    search_query = SearchQuery(query, config='turkish')  # Türkçe dil desteği
+
     try:
-        # Arama yap ve benzerlik skoruna göre sırala
-        posts = Post.objects.filter(q_objects).distinct()
-        
-        # Sonuçları puanla
-        scored_posts = []
+        # Arama yap ve alaka düzeyine göre sırala
+        posts = Post.objects.annotate(
+            rank=SearchRank('search_vector', search_query)
+        ).filter(search_vector=search_query).order_by('-rank')[:limit]
+
+        # Debug için sonuçları yazdır
+        print(f"\nArama sorgusu: {query}")
         for post in posts:
-            score = 0
-            post_text = f"{post.title.lower()} {post.content.lower()} {post.tags.lower()} {post.summary.lower()}"
-            
-            # Her kelime için puan hesapla
-            for word in words:
-                if word in post.title.lower():
-                    score += 3  # Başlıkta bulunma
-                if word in post.tags.lower():
-                    score += 2  # Etiketlerde bulunma
-                if word in post_text:
-                    score += 1  # Genel içerikte bulunma
-            
-            scored_posts.append((post, score))
-        
-        # Skorlara göre sırala ve en yüksek puanlıları al
-        scored_posts.sort(key=lambda x: x[1], reverse=True)
-        top_posts = [post for post, score in scored_posts[:limit]]
-        
-        print("\nBulunan postlar ve skorları:")
-        for post, score in scored_posts[:limit]:
-            print(f"- {post.title} (ID: {post.id}, Skor: {score})")
-        
-        return [post.to_search_format() for post in top_posts]
-        
+            print(f"- {post.title} (ID: {post.id}, Rank: {post.rank})")
+
+        return [post.to_search_format() for post in posts]
+
     except Exception as e:
         print(f"Arama hatası: {str(e)}")
         return []
